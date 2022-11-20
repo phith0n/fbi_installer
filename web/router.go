@@ -3,13 +3,17 @@ package web
 import (
 	"bufio"
 	"encoding/binary"
+	"fbi_installer/html"
 	"fbi_installer/logging"
 	"fmt"
 	"io"
+	"io/fs"
 	"net"
+	"net/http"
 	url2 "net/url"
 	"os"
 	"regexp"
+	"strings"
 	"time"
 
 	ginzap "github.com/gin-contrib/zap"
@@ -30,12 +34,21 @@ func StartGin(listen string) error {
 	r.GET("/api/list", ListCIA)
 	r.POST("/api/send", SendTo3DS)
 	r.GET("/api/download", DownloadCIA)
+	r.DELETE("/api/delete", DeleteCIA)
+
+	staticSub, _ := fs.Sub(html.StaticFS, "assets")
+	r.StaticFS("/assets", http.FS(staticSub))
+	r.StaticFileFS("/favicon.ico", "favicon.ico", http.FS(html.StaticFS))
+	r.NoRoute(func(c *gin.Context) {
+		c.FileFromFS("/", http.FS(html.StaticFS))
+	})
 
 	return r.Run(listen)
 }
 
 func UploadCIA(c *gin.Context) {
-	var filename = c.Query("filename")
+	defer c.Request.Body.Close()
+	var filename = c.Query("name")
 	if !namePattern.MatchString(filename) {
 		Message(c, 400, "filename must be ends with .cia, .3dsx, .cetk, .tik")
 		return
@@ -67,6 +80,7 @@ func UploadCIA(c *gin.Context) {
 }
 
 func ListCIA(c *gin.Context) {
+	keyword := strings.ToLower(c.Query("s"))
 	dirs, err := os.ReadDir(DataDir)
 	if err != nil {
 		logger.Errorf("failed to list directory %s", DataDir)
@@ -74,14 +88,24 @@ func ListCIA(c *gin.Context) {
 		return
 	}
 
-	var fileNames []string
+	var files []*GameFile
 	for _, entry := range dirs {
-		if !entry.IsDir() {
-			fileNames = append(fileNames, entry.Name())
+		if !entry.IsDir() && strings.Contains(strings.ToLower(entry.Name()), keyword) {
+			info, err := entry.Info()
+			if err != nil {
+				logger.Errorf("failed to get file %s info: %v", entry.Name(), err)
+				continue
+			}
+
+			files = append(files, &GameFile{
+				Name:    entry.Name(),
+				Size:    info.Size(),
+				ModTime: info.ModTime().Unix(),
+			})
 		}
 	}
 
-	c.JSON(200, fileNames)
+	c.JSON(200, files)
 }
 
 func DownloadCIA(c *gin.Context) {
@@ -108,14 +132,15 @@ func SendTo3DS(c *gin.Context) {
 	}
 
 	go func() {
-		conn, err := net.Dial("tcp", form.Address+":5000")
+		d := net.Dialer{Timeout: time.Second * 5}
+		conn, err := d.Dial("tcp", form.Address+":5000")
 		if err != nil {
 			logger.Errorf("failed to open TCP connection to %s:5000, %v", form.Address, err)
 			return
 		}
 		defer conn.Close()
 
-		var url = fmt.Sprintf("http://%s/api/download?name=%s", hostname, url2.QueryEscape(form.Name))
+		var url = fmt.Sprintf("%s/api/download?name=%s", hostname, url2.QueryEscape(form.Name))
 		logger.Debugf("send %s to address %s", url, hostname)
 
 		var bs = make([]byte, 4)
@@ -126,6 +151,24 @@ func SendTo3DS(c *gin.Context) {
 			return
 		}
 	}()
+
+	Message(c, 200)
+}
+
+func DeleteCIA(c *gin.Context) {
+	var name = c.Query("name")
+	var targetPath = cleanFilename(name)
+	if !IsFile(targetPath) {
+		Message(c, 404, "file %s not found", name)
+		return
+	}
+
+	err := os.Remove(targetPath)
+	if err != nil {
+		Message(c, 500)
+		logger.Errorf("failed to delete file %s: %v", targetPath, err)
+		return
+	}
 
 	Message(c, 200)
 }
