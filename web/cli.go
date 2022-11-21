@@ -1,6 +1,7 @@
 package web
 
 import (
+	"os"
 	"path/filepath"
 
 	"fbi_installer/logging"
@@ -17,6 +18,13 @@ var WebCommand = &cli.Command{
 		DataDir, err = filepath.Abs(c.String("data-dir"))
 		if err != nil {
 			return cli.Exit("data dir must exist", 1)
+		}
+		if !IsFile(DataDir) {
+			err = os.MkdirAll(DataDir, 0o755) //nolint:gosec
+		}
+
+		if err != nil {
+			return cli.Exit("create data dir error: " + err.Error(), 1)
 		}
 		BaseURL = c.String("base-url")
 		return StartGin(listen)

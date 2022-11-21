@@ -223,7 +223,7 @@ const loadData = async () => {
     console.error(error);
     notie.alert({
       type: 'error',
-      text: error.response.data['message'],
+      text: error.response.data['message'] || 'something went wrong, please try again...',
     });
   }
 }
