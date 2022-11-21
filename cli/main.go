@@ -15,7 +15,7 @@ var logger = logging.GetSugar()
 func main() {
 	app := cli.App{
 		Name:  "fbi_installer",
-		Usage: "",
+		Usage: "FBI Remote Installer is a tool help 3DS player to install games easier",
 		Commands: []*cli.Command{
 			web.WebCommand,
 		},

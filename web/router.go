@@ -60,7 +60,7 @@ func UploadCIA(c *gin.Context) {
 		return
 	}
 
-	writer, err := os.OpenFile(targetPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
+	writer, err := os.OpenFile(targetPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644) //nolint:gosec
 	if err != nil {
 		logger.Errorf("failed to open file %s", targetPath)
 		Message(c, 500)

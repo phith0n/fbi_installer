@@ -1,12 +1,12 @@
 package web
 
 import (
-	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/gin-gonic/gin"
 )
 
 func Message(c *gin.Context, code int, args ...interface{}) {
@@ -37,8 +37,6 @@ func cleanFilename(name string) string {
 func IsFile(filename string) bool {
 	if info, err := os.Stat(filename); err == nil {
 		return !info.IsDir()
-	} else if errors.Is(err, os.ErrNotExist) {
-		return false
 	} else {
 		return false
 	}

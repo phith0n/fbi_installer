@@ -2,14 +2,15 @@ package web
 
 import (
 	"fbi_installer/logging"
-	"github.com/urfave/cli/v2"
 	"path/filepath"
+
+	"github.com/urfave/cli/v2"
 )
 
 var logger = logging.GetSugar()
 var WebCommand = &cli.Command{
-	Name:  "webserver",
-	Usage: "",
+	Name:  "start",
+	Usage: "start the FBI Remote Installer daemon",
 	Action: func(c *cli.Context) (err error) {
 		listen := c.String("listen")
 		DataDir, err = filepath.Abs(c.String("data-dir"))
