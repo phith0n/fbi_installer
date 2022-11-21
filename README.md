@@ -4,10 +4,8 @@ FBI_Installer is a tool that is used to install CIA format games to 3DS, without
 
 ## Running
 
-### Mac/Linux
-
 ```shell
-$ fbi_installer.exe start -h
+$ ./fbi_installer start -h
 NAME:
    fbi_installer start - start the FBI Remote Installer daemon
 
