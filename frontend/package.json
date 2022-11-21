@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "vite build --outDir ../static",
+    "build": "vite build --outDir ../html",
     "preview": "vite preview"
   },
   "dependencies": {

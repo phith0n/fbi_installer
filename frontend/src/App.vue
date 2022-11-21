@@ -2,35 +2,35 @@
   <nav class="navbar bg-light">
     <div class="container">
       <a class="navbar-brand">FBI Remote Game Installer</a>
-      <form class="d-flex" role="search">
+      <div class="d-flex">
         <button class="btn btn-primary me-2" type="button"
-                @click="config.showConfig = !config.showConfig">Configuration
+                @click="state.showConfig = !state.showConfig">Configuration
         </button>
         <div class="col-auto me-2">
-          <input class="form-control" type="search" placeholder="Search Games" v-model="config.searchKeyword" @keydown.enter="loadData">
+          <input class="form-control" type="text" placeholder="Search Games" v-model="state.searchKeyword" @keydown.enter="loadData">
         </div>
         <button class="btn btn-success" type="button" @click="loadData">Search</button>
-      </form>
+      </div>
     </div>
   </nav>
   <div class="container mt-4">
-    <div v-if="!config.address" class="alert alert-warning" role="alert">
-      Your 3DS address is empty, <a href="#" @click="config.showConfig = true" class="text-decoration-none">click
+    <div v-if="!state.address" class="alert alert-warning" role="alert">
+      Your 3DS address is empty, <a href="#" @click="state.showConfig = true" class="text-decoration-none">click
       here</a> to set up the address.
     </div>
     <div v-else class="alert alert-primary" role="alert">
-      Your 3DS address is <strong>{{ config.address }}</strong>
+      Your 3DS address is <strong>{{ state.address }}</strong>
     </div>
 
-    <div class="mb-3" v-show="config.showConfig">
+    <div class="mb-3" v-show="state.showConfig">
       <label for="exampleFormControlInput1" class="form-label">3DS Address</label>
-      <input type="text" class="form-control" placeholder="" v-model="config.address">
+      <input type="text" class="form-control" placeholder="" v-model="state.address">
     </div>
 
     <hr/>
 
-    <div v-if="config.file == null" :class="['fileupload', dragging ? 'over': '']" @dragenter="dragging = true"
-         @dragleave="dragging = false">
+    <div v-if="state.file == null" :class="['fileupload', state.dragging ? 'over': '']" @dragenter="state.dragging = true"
+         @dragleave="state.dragging = false">
       <div class="info" @drag="onFilePut">
         <span class="bi bi-cloud-arrow-up-fill title me-1"></span>
         <span class="title">Drop or click to upload games</span>
@@ -46,11 +46,11 @@
         <div class="w-75">
           <div class="progress">
             <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
-                 :style="{width: config.progress + '%'}">{{ config.file.name }}
+                 :style="{width: state.progress + '%'}">{{ state.file.name }}
             </div>
           </div>
           <div class="mt-2">
-            File Name: {{ config.file.name }} File Size: {{ formatBytes(config.file.size) }}
+            File Name: {{ state.file.name }} File Size: {{ formatBytes(state.file.size) }}
           </div>
           <div class="mt-2">
             <button type="button" class="btn btn-primary me-2" @click="onUpload">Upload</button>
@@ -70,14 +70,14 @@
       </tr>
       </thead>
       <tbody>
-      <tr v-for="game in config.games">
+      <tr v-for="game in state.games">
         <th scope="row">{{game.name}}</th>
         <td>{{ formatBytes(game.size) }}</td>
         <td>{{ dayjs.unix(game['mod_time']).format('YYYY-MM-DD HH:mm:ss') }}</td>
         <td class="text-end">
           <button type="button" class="btn btn-outline-danger btn-sm me-2" @click="deleteFile(game.name)">Delete</button>
           <button type="button" class="btn btn-outline-primary btn-sm"
-                  :disabled="config.address === ''" @click="sendGame(game.name)">Send to 3DS</button>
+                  :disabled="state.address === ''" @click="sendGame(game.name)">Send to 3DS</button>
         </td>
       </tr>
       </tbody>
@@ -93,18 +93,18 @@ import notie from 'notie'
 import "bootstrap-icons/font/bootstrap-icons.scss"
 import 'notie/dist/notie.css';
 
-const config = reactive({
+const state = reactive({
   address: "",
   showConfig: false,
   file: null,
   games: [],
   progress: 0,
   searchKeyword: "",
+  dragging: false
 })
-const dragging = ref(false);
 
-watch(() => config.address, (current, old) => {
-  if (current) {
+watch(() => state.address, (current, old) => {
+  if (typeof current === "string") {
     window.localStorage.setItem("address", current);
   }
 })
@@ -126,12 +126,12 @@ const onFilePut = (e) => {
   }
 
   console.log(file);
-  config.file = file;
+  state.file = file;
 }
 
 const onCancel = e => {
-  config.file = null;
-  config.progress = 0;
+  state.file = null;
+  state.progress = 0;
 }
 
 const onUpload = async e => {
@@ -140,16 +140,16 @@ const onUpload = async e => {
       url: "/api/upload",
       method: "POST",
       params: {
-        name: config.file.name,
+        name: state.file.name,
       },
-      data: config.file,
+      data: state.file,
       onUploadProgress: ({loaded, total, progress, bytes, estimated, rate, upload = true}) => {
         console.log(loaded, total, progress);
-        config.progress = progress * 100;
+        state.progress = progress * 100;
       },
     })
     await loadData();
-    config.file = null;
+    state.file = null;
     notie.alert({
       type: 'success',
       text: 'upload file successful',
@@ -162,7 +162,7 @@ const onUpload = async e => {
     })
   }
 
-  config.progress = 0;
+  state.progress = 0;
 }
 
 const deleteFile = async filename => {
@@ -190,7 +190,7 @@ const sendGame = async name => {
       url: "/api/send",
       method: "POST",
       data: {
-        address: config.address,
+        address: state.address,
         name
       },
     })
@@ -217,8 +217,8 @@ const formatBytes = (bytes) => {
 
 const loadData = async () => {
   try {
-    const response = await axios.get("/api/list", {params: {s: config.searchKeyword}});
-    config.games = response.data;
+    const response = await axios.get("/api/list", {params: {s: state.searchKeyword}});
+    state.games = response.data;
   } catch (error) {
     console.error(error);
     notie.alert({
@@ -230,7 +230,7 @@ const loadData = async () => {
 
 onMounted(loadData);
 onMounted(() => {
-  config.address = window.localStorage.getItem("address") || "";
+  state.address = window.localStorage.getItem("address") || "";
 })
 </script>
 
