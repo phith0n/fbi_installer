@@ -1,8 +1,9 @@
 package web
 
 import (
-	"fbi_installer/logging"
 	"path/filepath"
+
+	"fbi_installer/logging"
 
 	"github.com/urfave/cli/v2"
 )

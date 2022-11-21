@@ -3,8 +3,6 @@ package web
 import (
 	"bufio"
 	"encoding/binary"
-	"fbi_installer/html"
-	"fbi_installer/logging"
 	"fmt"
 	"io"
 	"io/fs"
@@ -15,6 +13,9 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"fbi_installer/html"
+	"fbi_installer/logging"
 
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"

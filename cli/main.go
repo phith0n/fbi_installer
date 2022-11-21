@@ -1,10 +1,11 @@
 package main
 
 import (
-	"fbi_installer/logging"
-	"fbi_installer/web"
 	"log"
 	"os"
+
+	"fbi_installer/logging"
+	"fbi_installer/web"
 
 	"github.com/gin-gonic/gin"
 	"github.com/urfave/cli/v2"
