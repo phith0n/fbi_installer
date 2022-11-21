@@ -24,7 +24,7 @@ var WebCommand = &cli.Command{
 		}
 
 		if err != nil {
-			return cli.Exit("create data dir error: " + err.Error(), 1)
+			return cli.Exit("create data dir error: "+err.Error(), 1)
 		}
 		BaseURL = c.String("base-url")
 		return StartGin(listen)
